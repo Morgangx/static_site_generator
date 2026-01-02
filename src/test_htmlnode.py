@@ -1,6 +1,7 @@
 import unittest
 
 from htmlnode import HTMLNode, LeafNode, ParentNode
+from textnode import TextNode, TextType, text_node_to_html_node
 
 class TestHTMLNode(unittest.TestCase):
     def test_eq(self) -> None:
@@ -66,6 +67,32 @@ class TestHTMLNode(unittest.TestCase):
         with self.assertRaises(ValueError) as cm:
             parent_node.to_html()
         self.assertEqual(str(cm.exception), "No tag specified")
+
+
+    def test_text_node_to_html_node_basic_types(self) -> None:
+        cases: list[tuple[TextNode, tuple[str | None, str]]] = [
+            (TextNode("plain", TextType.TEXT),   (None, "plain")),
+            (TextNode("bold", TextType.BOLD),    ("b", "bold")),
+            (TextNode("ital", TextType.ITALIC),  ("i", "ital")),
+            (TextNode("code", TextType.CODE),    ("code", "code")),
+        ]
+
+        for node, (exp_tag, exp_value) in cases:
+            html: LeafNode = text_node_to_html_node(node)
+            self.assertEqual(html.tag, exp_tag)
+            self.assertEqual(html.value, exp_value)
+
+    def test_text_node_to_html_node_url_types(self) -> None:
+        cases: list[tuple[TextNode, tuple[str, str, dict[str, str]]]] = [
+            (TextNode("Click me!", TextType.LINK, "https://google.com"),    ("a", "Click me!", {"href": "https://google.com"})),
+            (TextNode("random_img", TextType.IMAGE, "random_img"),          ("img", "", {"src": "random_img", "alt": "random_img"})),
+        ]
+
+        for node, (exp_tag, exp_value, exp_props) in cases:
+            html: LeafNode = text_node_to_html_node(node)
+            self.assertEqual(html.tag, exp_tag)
+            self.assertEqual(html.value, exp_value)
+            self.assertEqual(html.props, exp_props)
 
 if __name__ == "__main__":
     unittest.main()
